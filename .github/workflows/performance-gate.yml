@@ -21,6 +21,9 @@ jobs:
   gate:
     name: ${{ matrix.version }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write          # documentar el defecto cuando la versión no pasa
     strategy:
       fail-fast: false
       matrix:
@@ -28,8 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Aquí iría la prueba de carga real (JMeter/k6) contra el ambiente de pruebas.
-      # En esta demo se usan los resultados ya generados del kit.
+      # Este workflow evalúa los resultados JMeter del kit (el veredicto oficial).
+      # La prueba de carga real con k6 está en k6-load-test.yml.
 
       - name: Performance Quality Gate
         id: gate
@@ -39,6 +42,9 @@ jobs:
           candidate: resultados/${{ matrix.version }}.csv
           config: perf-gate.yml
           name: ${{ matrix.version }}
+          create-issue: ${{ github.event_name != 'pull_request' }}   # en PRs solo se reporta
+          ai-summary: "true"                                         # se omite si no hay secret
+          groq-api-key: ${{ secrets.GROQ_API_KEY }}
 
       - name: Desplegar a producción (simulado)
         # Solo llega aquí si el gate pasó: un gate en rojo detiene el job.
