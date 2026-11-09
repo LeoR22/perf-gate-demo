@@ -4,7 +4,7 @@ global:
   warmup_seconds: 30
   max_throughput_decrease_pct: 15
   max_stabilization_increase_s: 10
-  stabilization_policy: warn
+  stabilization_policy: warn        # info | warn | fail
 
 defaults:
   percentile: 95

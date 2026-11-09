@@ -91,8 +91,13 @@ APIs simuladas ──► k6 (producción → A → B) ──► perf-gate ──
 | `grafana` | **http://localhost:3000**: sin login, con Infinity y el dashboard ya cargados |
 
 Tarda unos 5 minutos. Cuando el contenedor `gate` imprime `RESULTADO`, el dashboard ya muestra los datos:
-A **no pasa** (pagos 2,1x más lento, errores significativos al 99 % y throughput −23 %) y B **pasa con
-advertencias** (se estabiliza en 20 s, producción en 0 s).
+A **no pasa** y B **pasa con advertencias**.
+
+> **Cifras ilustrativas.** Las APIs son **simuladas** (imitan el comportamiento de A y B; no son las
+> versiones reales del reto) y k6 genera datos nuevos en cada corrida, así que los números varían. En una
+> ejecución de ejemplo: pagos 2,1x más lento en A, con errores significativos y throughput −23 %; B se
+> estabiliza en 20 s, producción en 0 s. El **veredicto oficial** sale de los resultados JMeter del kit
+> (workflow *Performance Gate*).
 
 - Más corto o más largo: `DURATION=40s docker compose up` (variables `DURATION` y `VUS`).
 - Otra versión de la herramienta: `PERF_GATE_REF=v1.3.0`.
