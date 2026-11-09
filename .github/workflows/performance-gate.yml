@@ -1,0 +1,47 @@
+# Pipeline de un equipo que usa el Performance Quality Gate antes de desplegar.
+# Esperado: version-a queda en ROJO y no se despliega; version-b pasa y se despliega.
+name: Performance Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión a evaluar"
+        type: choice
+        options: [todas, version-a, version-b]
+        default: todas
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON((inputs.version == '' || inputs.version == 'todas') && '["version-a","version-b"]' || format('["{0}"]', inputs.version)) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Aquí iría la prueba de carga real (JMeter/k6) contra el ambiente de pruebas.
+      # En esta demo se usan los resultados ya generados del kit.
+
+      - name: Performance Quality Gate
+        id: gate
+        uses: LeoR22/perf-quality-gate@v1
+        with:
+          baseline: resultados/produccion-actual.csv
+          candidate: resultados/${{ matrix.version }}.csv
+          config: perf-gate.yml
+          name: ${{ matrix.version }}
+
+      - name: Desplegar a producción (simulado)
+        # Solo llega aquí si el gate pasó: un gate en rojo detiene el job.
+        run: |
+          echo "🚀 ${{ matrix.version }} aprobada por el gate (${{ steps.gate.outputs.result }})."
+          echo "Aquí iría el despliegue real."
