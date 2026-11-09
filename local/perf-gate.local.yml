@@ -1,0 +1,22 @@
+# Límites para la demo local. Igual que perf-gate.yml, pero las pruebas locales duran ~75 s,
+# así que el calentamiento que se descarta es más corto.
+global:
+  warmup_seconds: 30
+  max_throughput_decrease_pct: 15
+  max_stabilization_increase_s: 10
+  stabilization_policy: warn
+
+defaults:
+  percentile: 95
+  max_increase_pct: 20
+  min_increase_ms: 15
+  max_error_rate_pct: 1.0
+  max_error_rate_increase_pp: 0.5
+  min_samples: 30
+
+endpoints:
+  "POST /pagos":
+    max_increase_pct: 10
+    max_ms: 600
+  "POST /transferencias":
+    max_ms: 600
