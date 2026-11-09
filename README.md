@@ -34,6 +34,29 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 Las ejecuciones están en la pestaña [Actions](https://github.com/LeoR22/perf-gate-demo/actions). En cada
 job, el **Summary** muestra el reporte visual endpoint por endpoint frente a producción y qué falló.
 
+## Reporte visual
+
+El job **Publicar reporte** corre siempre, pase o no pase el gate (el equipo necesita ver justamente qué
+falló), y publica en GitHub Pages:
+
+| Página | Qué muestra |
+|---|---|
+| [Portada](https://leor22.github.io/perf-gate-demo/) | Todas las versiones con su veredicto |
+| [Versión A](https://leor22.github.io/perf-gate-demo/version-a/report.html) / [Versión B](https://leor22.github.io/perf-gate-demo/version-b/report.html) | Endpoint por endpoint frente a producción, qué falló y qué mejorar |
+| [`grafana.json`](https://leor22.github.io/perf-gate-demo/grafana.json) | Filas planas de todas las versiones: la fuente de datos de Grafana |
+
+### Grafana
+
+[`grafana/dashboard.json`](grafana/dashboard.json) es un dashboard listo para importar. Lee `grafana.json`
+con el plugin [Infinity](https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/), así que el
+pipeline no necesita credenciales de Grafana y los datos no vencen (viven en Pages).
+
+1. En Grafana (Cloud gratis o local): **Connections → Add new connection → Infinity → Install** y crear
+   la fuente de datos con los valores por defecto.
+2. **Dashboards → New → Import**, subir `grafana/dashboard.json` y elegir la fuente Infinity.
+3. Elegir la versión en el selector de arriba. Otro equipo solo cambia la variable *Fuente* por la URL de
+   su propio `grafana.json`.
+
 ## Cómo probarlo
 
 - **Actions → Performance Gate → Run workflow**, y elegir `todas`, `version-a` o `version-b`.
