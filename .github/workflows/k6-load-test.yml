@@ -1,0 +1,69 @@
+# Prueba de carga REAL con k6 dentro del runner:
+#   APIs simuladas (producción y la versión) ──► k6 genera tráfico HTTP ──► perf-gate decide
+# A diferencia de performance-gate.yml (que evalúa los resultados JMeter del kit), aquí los datos
+# se generan en cada ejecución. Esperado: version-a no pasa, version-b pasa con advertencia.
+name: Prueba de carga real (k6)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: "Duración de cada prueba k6"
+        default: "75s"
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    name: k6 ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: version-a
+            api_env: "PAGOS_FACTOR=2.2 PAGOS_ERROR_PCT=3"      # pagos lento y con errores
+          - version: version-b
+            api_env: "COLD_START_S=25 COLD_FACTOR=3"            # arranque en frío
+    env:
+      DURATION: ${{ inputs.duration || '75s' }}
+      VUS: "10"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: "2.2.0"
+
+      - name: Levantar APIs (producción :8080 y ${{ matrix.version }} :8081)
+        run: |
+          mkdir -p results
+          PORT=8080 nohup python local/api/mock_api.py > api-produccion.log 2>&1 &
+          env ${{ matrix.api_env }} PORT=8081 nohup python local/api/mock_api.py > api-candidata.log 2>&1 &
+          for port in 8080 8081; do
+            for i in $(seq 1 30); do curl -fs "http://localhost:$port/health" >/dev/null && break; sleep 1; done
+            curl -fs "http://localhost:$port/health" >/dev/null || { cat api-*.log; exit 1; }
+          done
+
+      - name: k6 contra producción
+        run: k6 run --quiet -e BASE_URL=http://localhost:8080 -e VUS=$VUS -e DURATION=$DURATION
+             --out json=results/produccion.json local/k6/script.js
+
+      - name: k6 contra ${{ matrix.version }}
+        run: k6 run --quiet -e BASE_URL=http://localhost:8081 -e VUS=$VUS -e DURATION=$DURATION
+             --out json=results/${{ matrix.version }}.json local/k6/script.js
+
+      - name: Performance Quality Gate
+        uses: LeoR22/perf-quality-gate@v1
+        with:
+          baseline: results/produccion.json
+          candidate: results/${{ matrix.version }}.json
+          config: local/perf-gate.local.yml
+          name: ${{ matrix.version }}-k6
+          ai-summary: "true"                      # se omite si no hay secret
+          groq-api-key: ${{ secrets.GROQ_API_KEY }}
