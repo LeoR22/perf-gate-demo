@@ -20,6 +20,7 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 | [`resultados/`](resultados) | Resultados JMeter del kit: producción, versión A y versión B (5 min, 50 usuarios) |
 | [`perf-gate.yml`](perf-gate.yml) | Límites de **este** equipo (p. ej. pagos más estricto: +10 % y SLA de 600 ms) |
 | [`.github/workflows/performance-gate.yml`](.github/workflows/performance-gate.yml) | Evalúa A y B; solo despliega (simulado) la que pasa |
+| [`.github/workflows/k6-load-test.yml`](.github/workflows/k6-load-test.yml) | **Prueba de carga real con k6** en el runner: levanta las APIs simuladas, k6 genera el tráfico y el gate decide |
 | [`docker-compose.yml`](docker-compose.yml) + [`local/`](local) | Demo local: APIs simuladas, k6, gate y Grafana con un solo comando |
 | [`grafana/`](grafana) | Dashboard importable y su generador |
 
@@ -35,6 +36,16 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 
 Las ejecuciones están en la pestaña [Actions](https://github.com/LeoR22/perf-gate-demo/actions). En cada
 job, el **Summary** muestra el reporte visual endpoint por endpoint frente a producción y qué falló.
+
+## Defecto automático y resumen con IA
+
+- **Issues:** cuando una versión no pasa, el gate abre el issue
+  [`[perf-gate] version-a no pasa`](https://github.com/LeoR22/perf-gate-demo/issues?q=label%3Aperf-gate)
+  con el reporte y el link a la ejecución. En las ejecuciones siguientes lo comenta, y lo cierra solo
+  cuando la versión pase. En los PR solo se reporta, no se abren issues.
+- **Resumen con IA (Groq, plan gratuito):** si existe el secret `GROQ_API_KEY`, se agregan una explicación
+  y un plan de mejora al resumen de la ejecución y al issue. Sin el secret se omite con un aviso. La IA
+  nunca cambia el veredicto.
 
 ## Reporte visual
 
