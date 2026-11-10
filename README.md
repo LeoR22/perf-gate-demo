@@ -27,8 +27,8 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 
 | Versión | Gate | Despliegue | Por qué |
 |---|---|---|---|
-| [**version-a**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42726306808/job/129532693543) | ❌ NO PASA | Bloqueado | `POST /pagos` p95 767 ms vs 353 ms en producción (2,2x) y 3,33 % de errores |
-| [**version-b**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42726306808/job/129532693245) | ✅ PASA (con advertencias) | Ejecutado | Igual a producción en estado estable; tarda 50 s en estabilizarse (prod: 20 s) |
+| [**version-a**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42729780645/job/129544585059) | ❌ NO PASA | Bloqueado | `POST /pagos` p95 767 ms vs 353 ms en producción (2,2x) y 3,33 % de errores |
+| [**version-b**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42729780645/job/129544585407) | ✅ PASA (con advertencias) | Ejecutado | Igual a producción en estado estable; tarda 50 s en estabilizarse (prod: 20 s) |
 
 **La versión B reemplaza a producción.** El análisis completo y la justificación están en el
 [README de la herramienta](https://github.com/LeoR22/perf-quality-gate#cuál-versión-reemplaza-a-producción).
