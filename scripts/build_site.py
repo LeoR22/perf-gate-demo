@@ -4,7 +4,6 @@ Entrada:  carpeta con subcarpetas perf-gate-report-<version>/ (artifacts del pip
 Salida:   site/index.html                 portada con todas las versiones
           site/<version>/report.html      reporte visual de cada versión
           site/<version>/report.json      reporte completo
-          site/grafana.json               filas planas de todas las versiones (fuente para Grafana)
 Uso:      python scripts/build_site.py reports site
 """
 from __future__ import annotations
@@ -23,7 +22,7 @@ ICON = {"PASS": ("✓", "Pasa", "#0ca30c"), "WARN": ("!", "Pasa con advertencias
 
 def main(src: Path, out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
-    versions, rows = [], []
+    versions = []
     for report in sorted(src.glob("*/report.json")):
         data = json.loads(report.read_text(encoding="utf-8"))
         name = data["candidate"]
@@ -38,7 +37,6 @@ def main(src: Path, out: Path) -> None:
             "headline": data["headline"], "throughput_rps": round(run["throughput_rps"], 1),
             "error_rate_pct": round(run["error_rate_pct"], 2), "stabilization_s": run["stabilization_s"],
         })
-        rows.extend(data.get("rows", []))
 
     if not versions:
         sys.exit(f"No se encontraron reportes en {src}")
@@ -48,9 +46,6 @@ def main(src: Path, out: Path) -> None:
         "run_url": (f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}"
                     f"/actions/runs/{os.getenv('GITHUB_RUN_ID')}") if os.getenv("GITHUB_RUN_ID") else None,
     }
-    (out / "grafana.json").write_text(
-        json.dumps({**meta, "versions": versions, "rows": rows}, ensure_ascii=False, indent=2),
-        encoding="utf-8")
 
     cards = "".join(
         f'<a class="card" href="{escape(v["version"])}/report.html">'
@@ -73,7 +68,6 @@ color:inherit;text-decoration:none}}.card:hover{{border-color:var(--t2)}}.card h
 <h1>Performance Quality Gate</h1>
 <p class="sub">Versiones nuevas frente a producción · generado {meta["generated_at"]}{run_link}</p>
 <div class="grid">{cards}</div>
-<p class="sub" style="margin-top:28px">Datos para Grafana: <a href="grafana.json">grafana.json</a></p>
 </main></body></html>""", encoding="utf-8")
     print(f"Sitio generado en {out}: {', '.join(v['version'] for v in versions)}")
 

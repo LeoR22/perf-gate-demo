@@ -1,9 +1,8 @@
 # Demo local de punta a punta:  docker compose up
 #
-#   APIs simuladas ──► k6 (producción, A, B en secuencia) ──► perf-gate ──► reportes + Grafana
+#   APIs simuladas ──► k6 (producción, A, B en secuencia) ──► perf-gate ──► reporte HTML
 #
-#   Grafana:  http://localhost:3000   (sin login, dashboard ya cargado)
-#   Reportes: http://localhost:8000   (HTML de cada versión + grafana.json)
+#   Reportes: http://localhost:8000   (reporte HTML de cada versión)
 #
 # Variables opcionales (archivo .env o entorno): DURATION, VUS, PERF_GATE_REF.
 
@@ -90,20 +89,3 @@ services:
       - ./local/output/site:/site:ro
     ports:
       - "8000:8000"
-
-  grafana:
-    image: grafana/grafana:13.2.5
-    environment:
-      GF_PLUGINS_PREINSTALL_SYNC: yesoreyeram-infinity-datasource
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin       # solo para la demo local
-      GF_AUTH_DISABLE_LOGIN_FORM: "true"
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/perf-gate.json
-      GF_NEWS_NEWS_FEED_ENABLED: "false"
-    volumes:
-      - ./local/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./local/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports:
-      - "3000:3000"
-    depends_on:
-      - reports

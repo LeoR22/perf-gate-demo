@@ -1,4 +1,4 @@
-"""Evalúa cada versión contra producción con perf-gate y arma el sitio que lee Grafana.
+"""Evalúa cada versión contra producción con perf-gate y arma el sitio con los reportes HTML.
 
 Corre dentro del contenedor `gate` cuando k6 terminó. Nunca falla por un gate en rojo:
 el objetivo local es VER el resultado (en CI, el exit code sí bloquea el pipeline).
@@ -33,7 +33,7 @@ def main() -> int:
                                 "--config", CONFIG, "--name", version, "--report-dir", str(out)])
         verdicts[version] = {0: "PASA", 1: "NO PASA"}.get(code, f"ERROR ({code})")
 
-    # Reemplazar el sitio completo de una vez (Grafana y el navegador nunca ven uno a medias).
+    # Reemplazar el sitio completo de una vez (el navegador nunca ve uno a medias).
     tmp = SITE.with_name("site.tmp")
     shutil.rmtree(tmp, ignore_errors=True)
     build_site(reports, tmp)
@@ -47,7 +47,6 @@ def main() -> int:
     print("\n================ RESULTADO ================")
     for v, verdict in verdicts.items():
         print(f"  {v}: {verdict}")
-    print("  Grafana:  http://localhost:3000")
     print("  Reportes: http://localhost:8000")
     return 0
 
