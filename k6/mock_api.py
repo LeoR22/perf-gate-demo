@@ -1,4 +1,4 @@
-"""API simulada para la demo local (solo librería estándar).
+"""API simulada contra la que k6 genera carga en GitHub Actions (solo librería estándar).
 
 Imita los endpoints del kit. Variables de entorno:
   PORT              puerto (default 8080)

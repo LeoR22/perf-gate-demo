@@ -43,8 +43,8 @@ jobs:
       - name: Levantar APIs (producción :8080 y ${{ matrix.version }} :8081)
         run: |
           mkdir -p results
-          PORT=8080 nohup python local/api/mock_api.py > api-produccion.log 2>&1 &
-          env ${{ matrix.api_env }} PORT=8081 nohup python local/api/mock_api.py > api-candidata.log 2>&1 &
+          PORT=8080 nohup python k6/mock_api.py > api-produccion.log 2>&1 &
+          env ${{ matrix.api_env }} PORT=8081 nohup python k6/mock_api.py > api-candidata.log 2>&1 &
           for port in 8080 8081; do
             for i in $(seq 1 30); do curl -fs "http://localhost:$port/health" >/dev/null && break; sleep 1; done
             curl -fs "http://localhost:$port/health" >/dev/null || { cat api-*.log; exit 1; }
@@ -52,16 +52,16 @@ jobs:
 
       - name: k6 contra producción
         run: k6 run --quiet -e BASE_URL=http://localhost:8080 -e VUS=$VUS -e DURATION=$DURATION
-             --out json=results/produccion.json local/k6/script.js
+             --out json=results/produccion.json k6/script.js
 
       - name: k6 contra ${{ matrix.version }}
         run: k6 run --quiet -e BASE_URL=http://localhost:8081 -e VUS=$VUS -e DURATION=$DURATION
-             --out json=results/${{ matrix.version }}.json local/k6/script.js
+             --out json=results/${{ matrix.version }}.json k6/script.js
 
       - name: Performance Quality Gate
         uses: LeoR22/perf-quality-gate@v1
         with:
           baseline: results/produccion.json
           candidate: results/${{ matrix.version }}.json
-          config: local/perf-gate.local.yml
+          config: k6/perf-gate.k6.yml
           name: ${{ matrix.version }}-k6

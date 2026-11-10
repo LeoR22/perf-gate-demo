@@ -1,4 +1,4 @@
-// Prueba de carga k6 equivalente al plan JMeter del kit (la usa docker-compose.yml).
+// Prueba de carga k6 equivalente al plan JMeter del kit (la usa .github/workflows/k6-load-test.yml).
 // Manual:  k6 run --out json=resultados.json -e BASE_URL=http://localhost:8080 script.js
 //
 // Importante para el gate: cada petición lleva el tag `name` con la MISMA etiqueta que usa
