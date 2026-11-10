@@ -1,5 +1,10 @@
 # Pipeline de un equipo que usa el Performance Quality Gate antes de desplegar.
-# Esperado: version-a queda en ROJO y no se despliega; version-b pasa y se despliega.
+#
+# Evalúa AUTOMÁTICAMENTE cada archivo de resultados/ contra producción:
+#   resultados/produccion-actual.csv  → línea base (producción)
+#   resultados/<cualquier-otro>.csv   → una versión candidata (también acepta .json de k6)
+# Para evaluar una versión nueva basta con subir su archivo a resultados/ y hacer push.
+# Esperado con los datos del reto: version-a en ROJO (no se despliega) y version-b en VERDE.
 name: Performance Gate
 
 on:
@@ -9,17 +14,46 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Versión a evaluar"
-        type: choice
-        options: [todas, version-a, version-b]
-        default: todas
+        description: "Archivo a evaluar, sin extensión (p. ej. version-a). Vacío = todos"
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
+env:
+  BASELINE: resultados/produccion-actual.csv
+
 jobs:
+  # Descubre las versiones a evaluar a partir de los archivos de resultados/.
+  descubrir:
+    name: Descubrir versiones
+    runs-on: ubuntu-latest
+    outputs:
+      versiones: ${{ steps.lista.outputs.versiones }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: lista
+        env:
+          FILTRO: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, pathlib
+          base = pathlib.Path(os.environ["BASELINE"])
+          filtro = os.environ.get("FILTRO", "").strip()
+          archivos = sorted(p for p in pathlib.Path("resultados").iterdir()
+                            if p.suffix.lower() in (".csv", ".json") and p != base)
+          versiones = [{"name": p.stem, "file": str(p)} for p in archivos
+                       if not filtro or p.stem == filtro]
+          print("versiones=" + json.dumps(versiones))
+          PY
+          echo "### Versiones a evaluar contra \`$BASELINE\`" >> "$GITHUB_STEP_SUMMARY"
+          grep '^versiones=' "$GITHUB_OUTPUT" | cut -d= -f2- >> "$GITHUB_STEP_SUMMARY"
+
   gate:
-    name: ${{ matrix.version }}
+    name: ${{ matrix.name }}
+    needs: descubrir
+    if: needs.descubrir.outputs.versiones != '[]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,27 +61,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ${{ fromJSON((inputs.version == '' || inputs.version == 'todas') && '["version-a","version-b"]' || format('["{0}"]', inputs.version)) }}
+        include: ${{ fromJSON(needs.descubrir.outputs.versiones) }}
     steps:
       - uses: actions/checkout@v7
-
-      # Este workflow evalúa los resultados JMeter del kit (el veredicto oficial).
-      # La prueba de carga real con k6 está en k6-load-test.yml.
 
       - name: Performance Quality Gate
         id: gate
         uses: LeoR22/perf-quality-gate@v1
         with:
-          baseline: resultados/produccion-actual.csv
-          candidate: resultados/${{ matrix.version }}.csv
+          baseline: ${{ env.BASELINE }}
+          candidate: ${{ matrix.file }}
           config: perf-gate.yml
-          name: ${{ matrix.version }}
+          name: ${{ matrix.name }}
           create-issue: ${{ github.event_name != 'pull_request' }}   # en PRs solo se reporta
 
       - name: Desplegar a producción (simulado)
         # Solo llega aquí si el gate pasó: un gate en rojo detiene el job.
         run: |
-          echo "🚀 ${{ matrix.version }} aprobada por el gate (${{ steps.gate.outputs.result }})."
+          echo "🚀 ${{ matrix.name }} aprobada por el gate (${{ steps.gate.outputs.result }})."
           echo "Aquí iría el despliegue real."
 
   # Publica los reportes visuales en GitHub Pages,
@@ -55,7 +86,7 @@ jobs:
   report:
     name: Publicar reporte
     needs: gate
-    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: always() && needs.gate.result != 'skipped' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -86,6 +117,5 @@ jobs:
           {
             echo "### 📊 Reportes publicados"
             echo "- Portada: ${{ steps.deploy.outputs.page_url }}"
-            echo "- Versión A: ${{ steps.deploy.outputs.page_url }}version-a/report.html"
-            echo "- Versión B: ${{ steps.deploy.outputs.page_url }}version-b/report.html"
+            for d in site/*/; do n=$(basename "$d"); echo "- $n: ${{ steps.deploy.outputs.page_url }}$n/report.html"; done
           } >> "$GITHUB_STEP_SUMMARY"
