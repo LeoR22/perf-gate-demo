@@ -25,8 +25,8 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 
 | Versión | Gate | Despliegue | Por qué |
 |---|---|---|---|
-| [**version-a**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42729780645/job/129544585059) | ❌ NO PASA | Bloqueado | `POST /pagos` p95 767 ms vs 353 ms en producción (2,2x) y 3,33 % de errores |
-| [**version-b**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42729780645/job/129544585407) | ✅ PASA (con advertencias) | Ejecutado | Igual a producción en estado estable; tarda 50 s en estabilizarse (prod: 20 s) |
+| [**version-a**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42861993615/job/129990370653) | ❌ NO PASA | Bloqueado | `POST /pagos` p95 767 ms vs 353 ms en producción (2,2x) y 3,33 % de errores |
+| [**version-b**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42861993615/job/129990369767) | ✅ PASA (con advertencias) | Ejecutado | Igual a producción en estado estable; tarda 50 s en estabilizarse (prod: 20 s) |
 
 ### Escenarios sintéticos (demostración de las reglas)
 
@@ -36,10 +36,10 @@ con semilla fija, para mostrar que el gate funciona con más casos:
 
 | Escenario | Qué cambia frente a producción | Gate | Regla que aplica |
 |---|---|---|---|
-| **sintetica-pasa** | Todos los endpoints +5 % de latencia | ✅ PASA | +5 % está dentro de la tolerancia (+20 %; pagos +10 % en este equipo) |
-| **sintetica-falla** | `GET /clientes` +35 % y errores en `Consultar saldo` (≈2 %); pagos igual | ❌ NO PASA | Latencia por encima de +20 % y errores por encima del máximo absoluto de 1 % |
-| **version-c** | 10 % más rápida en todos los endpoints y sin errores | ✅ PASA | Mejor que producción en todo (solo hereda la advertencia de `/reportes`, que tiene 3 muestras en producción) |
-| **version-d** | Latencia x2 y 5 % de errores en todo, 30 % menos throughput y arranque en frío | ❌ NO PASA | Activa todas las reglas: latencia, errores, throughput y arranque |
+| [**sintetica-pasa**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42861993615/job/129990369588) | Todos los endpoints +5 % de latencia | ✅ PASA | +5 % está dentro de la tolerancia (+20 %; pagos +10 % en este equipo) |
+| [**sintetica-falla**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42861993615/job/129990369684) | `GET /clientes` +35 % y errores en `Consultar saldo` (≈2 %); pagos igual | ❌ NO PASA | Latencia por encima de +20 % y errores por encima del máximo absoluto de 1 % |
+| [**version-c**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42861993615/job/129990369605) | 10 % más rápida en todos los endpoints y sin errores | ✅ PASA | Mejor que producción en todo (solo hereda la advertencia de `/reportes`, que tiene 3 muestras en producción) |
+| [**version-d**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42861993615/job/129990370072) | Latencia x2 y 5 % de errores en todo, 30 % menos throughput y arranque en frío | ❌ NO PASA | Activa todas las reglas: latencia, errores, throughput y arranque |
 
 **La versión B reemplaza a producción.** El análisis completo y la justificación están en el
 [README de la herramienta](https://github.com/LeoR22/perf-quality-gate#cuál-versión-reemplaza-a-producción).
