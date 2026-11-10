@@ -30,7 +30,7 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 
 ### Escenarios sintéticos (demostración de las reglas)
 
-Además de A y B, `resultados/` tiene dos escenarios **sintéticos**. No son del reto: se generan a partir de los
+Además de A y B, `resultados/` tiene cuatro escenarios **sintéticos**. No son del reto: se generan a partir de los
 datos reales de producción con [`generar_escenarios.py`](https://github.com/LeoR22/perf-quality-gate/blob/main/scripts/generar_escenarios.py),
 con semilla fija, para mostrar que el gate funciona con más casos:
 
@@ -38,6 +38,8 @@ con semilla fija, para mostrar que el gate funciona con más casos:
 |---|---|---|---|
 | **sintetica-pasa** | Todos los endpoints +5 % de latencia | ✅ PASA | +5 % está dentro de la tolerancia (+20 %; pagos +10 % en este equipo) |
 | **sintetica-falla** | `GET /clientes` +35 % y errores en `Consultar saldo` (≈2 %); pagos igual | ❌ NO PASA | Latencia por encima de +20 % y errores por encima del máximo absoluto de 1 % |
+| **version-c** | 10 % más rápida en todos los endpoints y sin errores | ✅ PASA | Mejor que producción en todo (solo hereda la advertencia de `/reportes`, que tiene 3 muestras en producción) |
+| **version-d** | Latencia x2 y 5 % de errores en todo, 30 % menos throughput y arranque en frío | ❌ NO PASA | Activa todas las reglas: latencia, errores, throughput y arranque |
 
 **La versión B reemplaza a producción.** El análisis completo y la justificación están en el
 [README de la herramienta](https://github.com/LeoR22/perf-quality-gate#cuál-versión-reemplaza-a-producción).
