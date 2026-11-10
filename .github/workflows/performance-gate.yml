@@ -43,8 +43,6 @@ jobs:
           config: perf-gate.yml
           name: ${{ matrix.version }}
           create-issue: ${{ github.event_name != 'pull_request' }}   # en PRs solo se reporta
-          ai-summary: "true"                                         # se omite si no hay secret
-          groq-api-key: ${{ secrets.GROQ_API_KEY }}
 
       - name: Desplegar a producción (simulado)
         # Solo llega aquí si el gate pasó: un gate en rojo detiene el job.
@@ -52,7 +50,7 @@ jobs:
           echo "🚀 ${{ matrix.version }} aprobada por el gate (${{ steps.gate.outputs.result }})."
           echo "Aquí iría el despliegue real."
 
-  # Publica los reportes visuales (y la fuente de datos de Grafana) en GitHub Pages,
+  # Publica los reportes visuales en GitHub Pages,
   # pase o no pase el gate: el equipo necesita ver justamente qué falló.
   report:
     name: Publicar reporte
@@ -90,5 +88,4 @@ jobs:
             echo "- Portada: ${{ steps.deploy.outputs.page_url }}"
             echo "- Versión A: ${{ steps.deploy.outputs.page_url }}version-a/report.html"
             echo "- Versión B: ${{ steps.deploy.outputs.page_url }}version-b/report.html"
-            echo "- Datos para Grafana: ${{ steps.deploy.outputs.page_url }}grafana.json"
           } >> "$GITHUB_STEP_SUMMARY"

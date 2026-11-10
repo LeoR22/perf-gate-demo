@@ -65,5 +65,3 @@ jobs:
           candidate: results/${{ matrix.version }}.json
           config: local/perf-gate.local.yml
           name: ${{ matrix.version }}-k6
-          ai-summary: "true"                      # se omite si no hay secret
-          groq-api-key: ${{ secrets.GROQ_API_KEY }}
