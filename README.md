@@ -20,8 +20,6 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 | [`resultados/`](resultados) | Resultados JMeter del kit: producción, versión A y versión B (5 min, 50 usuarios) |
 | [`perf-gate.yml`](perf-gate.yml) | Límites de **este** equipo (p. ej. pagos más estricto: +10 % y SLA de 600 ms) |
 | [`.github/workflows/performance-gate.yml`](.github/workflows/performance-gate.yml) | Evalúa A y B; solo despliega (simulado) la que pasa |
-| [`.github/workflows/k6-load-test.yml`](.github/workflows/k6-load-test.yml) | **Prueba de carga real con k6** en el runner: levanta las APIs simuladas, k6 genera el tráfico y el gate decide |
-| [`k6/`](k6) | Script de k6, API simulada y límites que usa la prueba de carga real |
 
 ## Resultado
 
@@ -52,32 +50,6 @@ falló), y publica en GitHub Pages:
 |---|---|
 | [Portada](https://leor22.github.io/perf-gate-demo/) | Todas las versiones con su veredicto |
 | [Versión A](https://leor22.github.io/perf-gate-demo/version-a/report.html) / [Versión B](https://leor22.github.io/perf-gate-demo/version-b/report.html) | Endpoint por endpoint frente a producción, qué falló y qué mejorar |
-
-## Prueba de carga real con k6 (en GitHub Actions)
-
-El workflow [`k6-load-test.yml`](.github/workflows/k6-load-test.yml) corre **solo en cada push**, dentro del
-runner de GitHub, sin nada que instalar en tu computador:
-
-```
-API simulada de producción (:8080) ─┐
-                                    ├─► k6 genera carga real ─► perf-gate decide ─► A en rojo, B en verde
-API simulada de la versión (:8081) ─┘
-```
-
-| Paso del job | Qué hace |
-|---|---|
-| Levantar APIs | Inicia la [API simulada](k6/mock_api.py) de producción y la de la versión. A: pagos 2,2x más lento y 3 % de errores. B: igual a producción, pero con 25 s de arranque en frío |
-| k6 contra producción y contra la versión | Corre el [script de k6](k6/script.js) (10 usuarios, 75 s) con salida `--out json` |
-| Performance Quality Gate | Evalúa la versión contra producción con `LeoR22/perf-quality-gate@v1` y los [límites para k6](k6/perf-gate.k6.yml) |
-
-Para lanzarlo a mano con otra duración: **Actions → Prueba de carga real (k6) → Run workflow** y elegir la duración.
-
-> **Cifras ilustrativas.** Las APIs son **simuladas** (imitan el comportamiento de A y B; no son las
-> versiones reales del reto) y k6 genera datos nuevos en cada corrida, así que los números varían. El
-> **veredicto oficial** sale de los resultados JMeter del kit (workflow *Performance Gate*).
-
-Validar con k6 real dejó dos mejoras en la herramienta: el lector de k6 2.x (que copia `name` en `url`) y
-la prueba de significancia para errores (antes 3 errores sueltos en 415 peticiones hacían fallar a B).
 
 ## Cómo probarlo en GitHub
 
