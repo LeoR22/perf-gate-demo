@@ -3,7 +3,8 @@
 Imita los endpoints del kit. Variables de entorno:
   PORT              puerto (default 8080)
   PAGOS_FACTOR      multiplica la latencia de POST /pagos (2.2 = versión lenta, como A)
-  ERROR_PCT         % de respuestas 500 en todos los endpoints (default 0.3)
+  ERROR_PCT         % de respuestas 500 en todos los endpoints (default 0.1: con ~400 peticiones por
+                    endpoint, un ruido mayor puede superar por azar el límite absoluto de 1 %)
   PAGOS_ERROR_PCT   % de respuestas 500 en POST /pagos (default = ERROR_PCT)
   COLD_START_S      segundos de arranque en frío desde la PRIMERA petición (como B)
   COLD_FACTOR       cuánto más lento responde durante el arranque en frío (default 3)
@@ -18,7 +19,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PAGOS_FACTOR = float(os.getenv("PAGOS_FACTOR", "1"))
-ERROR_PCT = float(os.getenv("ERROR_PCT", "0.3"))
+ERROR_PCT = float(os.getenv("ERROR_PCT", "0.1"))
 PAGOS_ERROR_PCT = float(os.getenv("PAGOS_ERROR_PCT", str(ERROR_PCT)))
 COLD_START_S = float(os.getenv("COLD_START_S", "0"))
 COLD_FACTOR = float(os.getenv("COLD_FACTOR", "3"))
