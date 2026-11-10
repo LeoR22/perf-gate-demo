@@ -21,8 +21,7 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 | [`perf-gate.yml`](perf-gate.yml) | Límites de **este** equipo (p. ej. pagos más estricto: +10 % y SLA de 600 ms) |
 | [`.github/workflows/performance-gate.yml`](.github/workflows/performance-gate.yml) | Evalúa A y B; solo despliega (simulado) la que pasa |
 | [`.github/workflows/k6-load-test.yml`](.github/workflows/k6-load-test.yml) | **Prueba de carga real con k6** en el runner: levanta las APIs simuladas, k6 genera el tráfico y el gate decide |
-| [`docker-compose.yml`](docker-compose.yml) + [`local/`](local) | Demo local: APIs simuladas, k6, gate y Grafana con un solo comando |
-| [`grafana/`](grafana) | Dashboard importable y su generador |
+| [`docker-compose.yml`](docker-compose.yml) + [`local/`](local) | Demo local: APIs simuladas, k6, gate y reporte HTML con un solo comando |
 
 ## Resultado
 
@@ -37,15 +36,12 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 Las ejecuciones están en la pestaña [Actions](https://github.com/LeoR22/perf-gate-demo/actions). En cada
 job, el **Summary** muestra el reporte visual endpoint por endpoint frente a producción y qué falló.
 
-## Defecto automático y resumen con IA
+## Defecto automático
 
-- **Issues:** cuando una versión no pasa, el gate abre el issue
-  [`[perf-gate] version-a no pasa`](https://github.com/LeoR22/perf-gate-demo/issues?q=label%3Aperf-gate)
-  con el reporte y el link a la ejecución. En las ejecuciones siguientes lo comenta, y lo cierra solo
-  cuando la versión pase. En los PR solo se reporta, no se abren issues.
-- **Resumen con IA (Groq, plan gratuito):** si existe el secret `GROQ_API_KEY`, se agregan una explicación
-  y un plan de mejora al resumen de la ejecución y al issue. Sin el secret se omite con un aviso. La IA
-  nunca cambia el veredicto.
+Cuando una versión no pasa, el gate abre el issue
+[`[perf-gate] version-a no pasa`](https://github.com/LeoR22/perf-gate-demo/issues?q=label%3Aperf-gate)
+con el reporte y el link a la ejecución. En las ejecuciones siguientes lo comenta, y lo cierra solo
+cuando la versión pase. En los PR solo se reporta, no se abren issues.
 
 ## Reporte visual
 
@@ -56,21 +52,8 @@ falló), y publica en GitHub Pages:
 |---|---|
 | [Portada](https://leor22.github.io/perf-gate-demo/) | Todas las versiones con su veredicto |
 | [Versión A](https://leor22.github.io/perf-gate-demo/version-a/report.html) / [Versión B](https://leor22.github.io/perf-gate-demo/version-b/report.html) | Endpoint por endpoint frente a producción, qué falló y qué mejorar |
-| [`grafana.json`](https://leor22.github.io/perf-gate-demo/grafana.json) | Filas planas de todas las versiones: la fuente de datos de Grafana |
 
-### Grafana
-
-[`grafana/dashboard.json`](grafana/dashboard.json) es un dashboard listo para importar. Lee `grafana.json`
-con el plugin [Infinity](https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/), así que el
-pipeline no necesita credenciales de Grafana y los datos no vencen (viven en Pages).
-
-1. En Grafana (Cloud gratis o local): **Connections → Add new connection → Infinity → Install** y crear
-   la fuente de datos con los valores por defecto.
-2. **Dashboards → New → Import**, subir `grafana/dashboard.json` y elegir la fuente Infinity.
-3. Elegir la versión en el selector de arriba. Otro equipo solo cambia la variable *Fuente* por la URL de
-   su propio `grafana.json`.
-
-## Demo local con Docker (k6 + Grafana)
+## Demo local con Docker (k6)
 
 Todo el ciclo en tu máquina con un solo comando, sin cuentas ni credenciales:
 
@@ -79,7 +62,7 @@ docker compose up
 ```
 
 ```
-APIs simuladas ──► k6 (producción → A → B) ──► perf-gate ──► reportes HTML + Grafana
+APIs simuladas ──► k6 (producción → A → B) ──► perf-gate ──► reporte HTML
 ```
 
 | Servicio | Qué hace |
@@ -87,10 +70,9 @@ APIs simuladas ──► k6 (producción → A → B) ──► perf-gate ──
 | `api-produccion`, `api-version-a`, `api-version-b` | [API simulada](local/api/mock_api.py) con los endpoints del kit. A: pagos 2,2x más lento y 3 % de errores. B: igual a producción, pero con 25 s de arranque en frío |
 | `k6-*` | [Prueba k6](local/k6/script.js) (10 usuarios, 75 s) contra cada API, una a la vez, con salida `--out json` |
 | `gate` | Instala `perf-quality-gate@v1` desde GitHub y evalúa A y B contra producción ([límites locales](local/perf-gate.local.yml)) |
-| `reports` | http://localhost:8000: reportes HTML y `grafana.json` |
-| `grafana` | **http://localhost:3000**: sin login, con Infinity y el dashboard ya cargados |
+| `reports` | **http://localhost:8000**: portada y reporte HTML de cada versión |
 
-Tarda unos 5 minutos. Cuando el contenedor `gate` imprime `RESULTADO`, el dashboard ya muestra los datos:
+Tarda unos 5 minutos. Cuando el contenedor `gate` imprime `RESULTADO`, los reportes ya están en http://localhost:8000:
 A **no pasa** y B **pasa con advertencias**.
 
 > **Cifras ilustrativas.** Las APIs son **simuladas** (imitan el comportamiento de A y B; no son las
@@ -104,9 +86,8 @@ A **no pasa** y B **pasa con advertencias**.
 - Volver a evaluar sin repetir k6: `docker compose run --rm --no-deps gate`.
 - Apagar: `docker compose down`.
 
-Validar contra Grafana y k6 reales dejó mejoras en la herramienta: el lector de k6 2.x (que copia `name`
-en `url`), la prueba de significancia para errores (antes 3 errores sueltos en 415 peticiones hacían
-fallar a B) y, en el dashboard, el parser `backend` de Infinity v4.
+Validar con k6 real dejó dos mejoras en la herramienta: el lector de k6 2.x (que copia `name` en `url`) y
+la prueba de significancia para errores (antes 3 errores sueltos en 415 peticiones hacían fallar a B).
 
 ## Cómo probarlo en GitHub
 
