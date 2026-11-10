@@ -1,5 +1,6 @@
-# Configuración del Performance Quality Gate para ESTE equipo.
-# Todo es opcional: lo que no se defina toma el valor por defecto (ver README).
+# Configuración del Performance Quality Gate para ESTE equipo. El reto no define SLA: los ajustes por
+# endpoint (pagos +10 %, SLA de 600 ms) son decisiones ilustrativas de este equipo, no requisitos.
+# Todo es opcional: lo que no se defina toma el valor por defecto de la herramienta.
 
 global:
   warmup_seconds: 60                # se descarta el primer minuto (calentamiento / ramp-up)

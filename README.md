@@ -28,6 +28,17 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 | [**version-a**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42729780645/job/129544585059) | ❌ NO PASA | Bloqueado | `POST /pagos` p95 767 ms vs 353 ms en producción (2,2x) y 3,33 % de errores |
 | [**version-b**](https://github.com/LeoR22/perf-gate-demo/actions/runs/42729780645/job/129544585407) | ✅ PASA (con advertencias) | Ejecutado | Igual a producción en estado estable; tarda 50 s en estabilizarse (prod: 20 s) |
 
+### Escenarios sintéticos (demostración de las reglas)
+
+Además de A y B, `resultados/` tiene dos escenarios **sintéticos**. No son del reto: se generan a partir de los
+datos reales de producción con [`generar_escenarios.py`](https://github.com/LeoR22/perf-quality-gate/blob/main/scripts/generar_escenarios.py),
+con semilla fija, para mostrar que el gate funciona con más casos:
+
+| Escenario | Qué cambia frente a producción | Gate | Regla que aplica |
+|---|---|---|---|
+| **sintetica-pasa** | Todos los endpoints +5 % de latencia | ✅ PASA | +5 % está dentro de la tolerancia (+20 %; pagos +10 % en este equipo) |
+| **sintetica-falla** | `GET /clientes` +35 % y errores en `Consultar saldo` (≈2 %); pagos igual | ❌ NO PASA | Latencia por encima de +20 % y errores por encima del máximo absoluto de 1 % |
+
 **La versión B reemplaza a producción.** El análisis completo y la justificación están en el
 [README de la herramienta](https://github.com/LeoR22/perf-quality-gate#cuál-versión-reemplaza-a-producción).
 
