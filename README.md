@@ -3,6 +3,9 @@
 Repositorio de ejemplo de un **equipo** que usa el
 [Performance Quality Gate](https://github.com/LeoR22/perf-quality-gate) en su pipeline antes de desplegar.
 
+> **El reto es A vs B: la versión B reemplaza a producción.** Los demás archivos de `resultados/` son
+> pruebas adicionales para demostrar las reglas (ver [Escenarios sintéticos](#escenarios-sintéticos-demostración-de-las-reglas)).
+
 La herramienta vive en su propio repositorio y se consume por versión, como cualquier GitHub Action:
 
 ```yaml
@@ -17,7 +20,7 @@ La herramienta vive en su propio repositorio y se consume por versión, como cua
 
 | Archivo | Para qué |
 |---|---|
-| [`resultados/`](resultados) | `produccion-actual.csv` es la línea base; **cada otro archivo es una versión a evaluar** (hoy: A y B del kit, 5 min, 50 usuarios) |
+| [`resultados/`](resultados) | `produccion-actual.csv` es la línea base; **cada otro archivo es una versión a evaluar** (A y B del kit, 5 min, 50 usuarios, más 4 escenarios de prueba) |
 | [`perf-gate.yml`](perf-gate.yml) | Límites de **este** equipo (p. ej. pagos más estricto: +10 % y SLA de 600 ms) |
 | [`.github/workflows/performance-gate.yml`](.github/workflows/performance-gate.yml) | Descubre los archivos de `resultados/`, evalúa cada uno contra producción y solo despliega (simulado) los que pasan |
 
@@ -63,6 +66,7 @@ falló), y publica en GitHub Pages:
 |---|---|
 | [Portada](https://leor22.github.io/perf-gate-demo/) | Todas las versiones con su veredicto |
 | [Versión A](https://leor22.github.io/perf-gate-demo/version-a/report.html) / [Versión B](https://leor22.github.io/perf-gate-demo/version-b/report.html) | Endpoint por endpoint frente a producción, qué falló y qué mejorar |
+| [Versión C](https://leor22.github.io/perf-gate-demo/version-c/report.html) / [Versión D](https://leor22.github.io/perf-gate-demo/version-d/report.html) / [sintetica-pasa](https://leor22.github.io/perf-gate-demo/sintetica-pasa/report.html) / [sintetica-falla](https://leor22.github.io/perf-gate-demo/sintetica-falla/report.html) | Lo mismo para los escenarios de prueba |
 
 ## Evaluar una versión nueva
 
@@ -71,15 +75,15 @@ automáticamente** contra producción, con su propio job, reporte e issue.
 
 **Desde el navegador:**
 1. Entra a la carpeta [`resultados/`](resultados) → **Add file → Upload files**.
-2. Sube el archivo de resultados, por ejemplo `version-c.csv` (CSV de JMeter, o `.json`/`.csv` de k6).
+2. Sube el archivo de resultados, por ejemplo `version-e.csv` (CSV de JMeter, o `.json`/`.csv` de k6).
 3. **Commit changes**.
-4. En **Actions** aparece la ejecución sola, con un job `version-c` además de `version-a` y `version-b`.
+4. En **Actions** aparece la ejecución sola, con un job `version-e` además de los existentes.
 
 **Desde tu computador:**
 ```bash
-cp mi-prueba.csv resultados/version-c.csv
-git add resultados/version-c.csv
-git commit -m "test: evaluar version-c"
+cp mi-prueba.csv resultados/version-e.csv
+git add resultados/version-e.csv
+git commit -m "test: evaluar version-e"
 git push
 ```
 
@@ -88,7 +92,7 @@ de los endpoints (`label`) deben coincidir con los de producción para poder com
 dato inválido, el job se detiene e indica la línea y la columna.
 
 **Evaluar solo una:** **Actions → Performance Gate → Run workflow** y escribir el nombre sin extensión
-(por ejemplo `version-c`). Si lo dejas vacío, evalúa todas.
+(por ejemplo `version-e`). Si lo dejas vacío, evalúa todas.
 
 Para dejar de evaluar una versión, borra su archivo de `resultados/`.
 
